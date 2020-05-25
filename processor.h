@@ -1,5 +1,5 @@
-#ifndef PROCESSOR_H
-#define PROCESSOR_H
+#ifndef _PROCESSOR_H
+#define _PROCESSOR_H
 
 #include <stdint.h>
 
@@ -64,5 +64,7 @@ typedef struct {
   uint32_t num_rows;
   void* pages[TABLE_MAX_PAGES];
 } Table;
+
+void* row_slot(Table* table, uint32_t row_num);
 
 #endif

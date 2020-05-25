@@ -1,5 +1,5 @@
-#ifndef INTERFACE_H
-#define INTERFACE_H
+#ifndef _INTERFACE_H
+#define _INTERFACE_H
 
 #include <sys/types.h>
 
