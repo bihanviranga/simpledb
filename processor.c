@@ -46,14 +46,12 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
   return PREPARE_UNRECOGNIZED_STATEMENT;
 }
 
-ExecuteResult execute_statement(Statement* statement) {
+ExecuteResult execute_statement(Statement* statement, Table* table) {
   switch (statement->type) {
     case (STATEMENT_INSERT):
-      printf("Insert command executed here.\n");
-      break;
+      return execute_insert(statement, table);
     case (STATEMENT_SELECT):
-      printf("Select command executed here.\n");
-      break;
+      return execute_select(statement, table);
   }
 }
 

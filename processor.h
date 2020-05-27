@@ -44,7 +44,7 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer);
 
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement);
 
-ExecuteResult execute_statement(Statement* statement);
+ExecuteResult execute_statement(Statement* statement, Table* table);
 
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
 
