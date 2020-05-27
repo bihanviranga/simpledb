@@ -40,6 +40,13 @@ typedef enum {
   EXECUTE_SUCCESS
 } ExecuteResult;
 
+#define TABLE_MAX_PAGES 100
+
+typedef struct {
+  uint32_t num_rows;
+  void* pages[TABLE_MAX_PAGES];
+} Table;
+
 MetaCommandResult do_meta_command(InputBuffer* input_buffer);
 
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement);
@@ -52,14 +59,9 @@ void serialize_row(Row* source, void* destination);
 
 void deserialize_row(void* source, Row* destination);
 
-#define TABLE_MAX_PAGES 100
-
-typedef struct {
-  uint32_t num_rows;
-  void* pages[TABLE_MAX_PAGES];
-} Table;
-
 void* row_slot(Table* table, uint32_t row_num);
+
+void print_row(Row* row);
 
 ExecuteResult execute_insert(Statement* statement, Table* table);
 ExecuteResult execute_select(Statement* statement, Table* table);
