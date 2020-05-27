@@ -46,7 +46,7 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
   return PREPARE_UNRECOGNIZED_STATEMENT;
 }
 
-void execute_statement(Statement* statement) {
+ExecuteResult execute_statement(Statement* statement) {
   switch (statement->type) {
     case (STATEMENT_INSERT):
       printf("Insert command executed here.\n");
@@ -79,4 +79,17 @@ void* row_slot(Table* table, uint32_t row_num) {
   uint32_t row_offset = row_num % ROWS_PER_PAGE;
   uint32_t byte_offset = row_offset * ROW_SIZE;
   return page + byte_offset;
+}
+
+ExecuteResult execute_insert(Statement* statement, Table* table) {
+  if (table->num_rows >= TABLE_MAX_ROWS) {
+    return EXECUTE_TABLE_FULL;
+  }
+
+  Row* row_to_insert = &(statement->row_to_insert);
+
+  serialize_row(row_to_insert, row_slot(table, table->num_rows));
+  table->num_rows += 1;
+
+  return EXECUTE_SUCCESS;
 }
