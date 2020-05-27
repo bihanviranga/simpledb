@@ -62,5 +62,6 @@ typedef struct {
 void* row_slot(Table* table, uint32_t row_num);
 
 ExecuteResult execute_insert(Statement* statement, Table* table);
+ExecuteResult execute_select(Statement* statement, Table* table);
 
 #endif
