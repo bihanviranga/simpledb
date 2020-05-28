@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "interface.h"
+#include "internals.h"
 #include "processor.h"
 
 int main(int argc, char* argv[]) {
