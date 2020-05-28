@@ -1,3 +1,6 @@
+/******************************************************************************** 
+ * main.c : Drives the execution of the simpledb program.
+ ********************************************************************************/
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -5,13 +8,22 @@
 #include "internals.h"
 #include "processor.h"
 
+/* 
+ * Entry point for the simpledb program.
+ * 
+ * Creates an in-memory table. Reads user input, and if the input is a meta-command
+ * executes it. Otherwise it prepares the statement and executes it. 
+ */
 int main(int argc, char* argv[]) {
   Table* table = new_table();
   InputBuffer* input_buffer = new_input_buffer();
+
+  /* REPL */
   while (true) {
     print_prompt();
     read_input(input_buffer);
 
+    /* Meta-commands begin with a . (dot) character */
     if (input_buffer->buffer[0] == '.') {
       switch (do_meta_command(input_buffer)) {
         case (META_COMMAND_SUCCESS):
