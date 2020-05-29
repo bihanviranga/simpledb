@@ -3,10 +3,10 @@ from subprocess import Popen, PIPE
 
 class TestDatabase(unittest.TestCase):
     def setUp(self):
-        print("[*] Setting up test.")
+        pass
 
     def tearDown(self):
-        print("[*] Ending test.")
+        pass
 
     def run_db(self, commands):
         commands = '\n'.join(commands)
@@ -20,7 +20,33 @@ class TestDatabase(unittest.TestCase):
         commands = ['.not-a-command', '.exit']
         results = self.run_db(commands)
         self.assertEqual("db > Unrecognized command '.not-a-command'", results[0])
-            
+
+    def test_detectsArgumentCountErrorsInInsert(self):
+        commands = ['insert 1 user', '.exit']
+        results = self.run_db(commands)
+        self.assertIn("db > Syntax error. Could not parse statement.", results)
+
+    def test_detectsUnrecognizedStatements(self):
+        commands = ['not-a-statement', '.exit']
+        results = self.run_db(commands)
+        self.assertIn("db > Unrecognized keyword at start of 'not-a-statement'", results)
+    
+    def test_insertsAndRetrievesARow(self):
+        commands = ['insert 1 user user@example.com', 'select', '.exit']
+        results = self.run_db(commands)
+        self.assertIn("db > 1 user user@example.com", results)
+
+    def test_detectsWhenTableIsFull(self):
+        """ 
+        Currently a page can hold 15 rows.
+        A table has 100 pages. Therefore total rows in the table = 15*100 = 1500
+        """
+        commands = []
+        for i in range(0, 1501):
+            commands.append("insert {0} user{0} user{0}@email.com".format(i))
+        commands.append(".exit")
+        results = self.run_db(commands)
+        self.assertIn("db > Error: Table full.", results)
 
 if __name__ == "__main__":
     unittest.main()
