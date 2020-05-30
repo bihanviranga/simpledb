@@ -1,3 +1,6 @@
+/******************************************************************************** 
+ * internals.c : Internal implementation of data structures
+ ********************************************************************************/
 #ifndef _INTERNALS_H
 #define _INTERNALS_H
 
@@ -8,6 +11,7 @@
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
 
+/* Arbitrary value. Table is composed of pages, each of which has rows. */
 #define TABLE_MAX_PAGES 100
 
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
@@ -19,7 +23,7 @@ typedef enum {
 
 /* 
  * The additional byte (+1) is given for the null byte at the end.
- * Without this, the test failed.
+ * Without this, the test fails.
  */
 typedef struct {
   uint32_t id;
@@ -29,7 +33,7 @@ typedef struct {
 
 typedef struct {
   StatementType type;
-  Row row_to_insert;  // for insert statement
+  Row row_to_insert; /* Used only by the insert statement */
 } Statement;
 
 typedef struct {

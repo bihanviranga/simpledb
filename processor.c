@@ -1,3 +1,6 @@
+/******************************************************************************** 
+ * processor.c : Processing of commands and statements
+ ********************************************************************************/
 #include "processor.h"
 
 #include <stdio.h>
@@ -6,6 +9,9 @@
 
 #include "results.h"
 
+/* 
+ * Executes the meta command in a given InputBuffer.
+ */
 MetaCommandResult do_meta_command(InputBuffer* input_buffer) {
   if (strcmp(input_buffer->buffer, ".exit") == 0) {
     exit(EXIT_SUCCESS);
@@ -14,6 +20,9 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer) {
   }
 }
 
+/* 
+ * Detects the statement type and prepares a Statement for execution.
+ */
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
   if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
     return prepare_insert(input_buffer, statement);
@@ -27,6 +36,11 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
   return PREPARE_UNRECOGNIZED_STATEMENT;
 }
 
+/* 
+ * Prepares an insert statement for execution.
+ * Tokenizes the query parameters and does validation for size and range.
+ * Populates the Statement->row_to_insert member.
+ */
 PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
   statement->type = STATEMENT_INSERT;
   char* keyword = strtok(input_buffer->buffer, " ");
@@ -56,6 +70,9 @@ PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
   return PREPARE_SUCCESS;
 }
 
+/* 
+ * Calls the relevant execution function according to the Statement type.
+ */
 ExecuteResult execute_statement(Statement* statement, Table* table) {
   switch (statement->type) {
     case (STATEMENT_INSERT):
