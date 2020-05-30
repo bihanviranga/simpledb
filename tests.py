@@ -48,5 +48,16 @@ class TestDatabase(unittest.TestCase):
         results = self.run_db(commands)
         self.assertIn("db > Error: Table full.", results)
 
+    def test_allowsStringsThatAreMaximumLength(self):
+        """
+        Currently it is defined that username should be 32 bytes and email should be 225 bytes
+        """
+        long_username = "a"*32
+        long_email = "b"*225
+        long_insert = "insert 1 {} {}".format(long_username, long_email)
+        commands = [long_insert, "select", ".exit"]
+        results = self.run_db(commands)
+        self.assertIn("db > 1 {} {}".format(long_username, long_email), results)
+
 if __name__ == "__main__":
     unittest.main()

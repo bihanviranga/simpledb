@@ -6,7 +6,7 @@
 #include "results.h"
 
 #define COLUMN_USERNAME_SIZE 32
-#define COLUMN_EMAIL_SIZE 225
+#define COLUMN_EMAIL_SIZE 255
 
 #define TABLE_MAX_PAGES 100
 
@@ -17,10 +17,14 @@ typedef enum {
   STATEMENT_SELECT
 } StatementType;
 
+/* 
+ * The additional byte (+1) is given for the null byte at the end.
+ * Without this, the test failed.
+ */
 typedef struct {
   uint32_t id;
-  char username[COLUMN_USERNAME_SIZE];
-  char email[COLUMN_EMAIL_SIZE];
+  char username[COLUMN_USERNAME_SIZE + 1];
+  char email[COLUMN_EMAIL_SIZE + 1];
 } Row;
 
 typedef struct {
