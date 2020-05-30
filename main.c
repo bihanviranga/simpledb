@@ -44,6 +44,12 @@ int main(int argc, char* argv[]) {
       case (PREPARE_UNRECOGNIZED_STATEMENT):
         printf("Unrecognized keyword at start of '%s'\n", input_buffer->buffer);
         continue;
+      case (PREPARE_STRING_TOO_LONG):
+        printf("Maximum string length exceeded.\n");
+        continue;
+      case (PREPARE_NEGATIVE_ID):
+        printf("ID cannot be negative.\n");
+        continue;
     }
 
     switch (execute_statement(&statement, table)) {
