@@ -72,5 +72,13 @@ class TestDatabase(unittest.TestCase):
         results = self.run_db(commands)
         self.assertIn("db > ID cannot be negative.", results)
 
+    def test_persistsDataWhenClosed(self):
+        commands1 = ['insert 1 user user@email.com', '.exit']
+        commands2 = ['select', '.exit']
+
+        self.run_db(commands1)
+        results = self.run_db(commands2)
+        self.assertIn('db > 1 user user@email.com', results)
+
 if __name__ == "__main__":
     unittest.main()

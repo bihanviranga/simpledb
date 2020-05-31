@@ -37,8 +37,14 @@ typedef struct {
 } Statement;
 
 typedef struct {
-  uint32_t num_rows;
+  int file_descriptor;
+  uint32_t file_length;
   void* pages[TABLE_MAX_PAGES];
+} Pager;
+
+typedef struct {
+  uint32_t num_rows;
+  Pager* pager;
 } Table;
 
 void serialize_row(Row* source, void* destination);
@@ -51,7 +57,7 @@ void print_row(Row* row);
 ExecuteResult execute_insert(Statement* statement, Table* table);
 ExecuteResult execute_select(Statement* statement, Table* table);
 
-Table* new_table();
+Table* db_open(const char* filename);
 void free_table(Table* table);
 
 #endif
