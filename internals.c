@@ -151,6 +151,12 @@ Pager* pager_open(const char* filename) {
   return pager;
 }
 
+/* 
+ * Returns the page with the given page number from a pager.
+ * If the page is not in the cache (in-memory), reads it from disk.
+ * If the requested page number is not found in the file, it allocates a new 
+ * blank page. This blank page will not be persisted to the disk until flushed.(eg: using db_close())
+ */
 void* get_page(Pager* pager, uint32_t page_num) {
   /* TODO: Move this error message elsewhere */
   if (page_num > TABLE_MAX_PAGES) {
@@ -185,4 +191,49 @@ void* get_page(Pager* pager, uint32_t page_num) {
   }
 
   return pager->pages[page_num];
+}
+
+void db_close(Table* table) {
+  Pager* pager = table->pager;
+  uint32_t num_full_pages = table->num_rows / ROWS_PER_PAGE;
+
+  for (uint32_t i = 0; i < num_full_pages; i++) {
+    if (pager->pages[i] == NULL) {
+      continue;
+    }
+    pager_flush(pager, i, PAGE_SIZE);
+    free(pager->pages[i]);
+    pager->pages[i] = NULL;
+  }
+
+  /* 
+   * Flushing the partial page at the end of the pages (if any).
+   * This won't be needed once we switch to a B-Tree.
+   */
+  uint32_t num_additional_rows = table->num_rows % ROWS_PER_PAGE;
+  if (num_additional_rows > 0) {
+    uint32_t page_num = num_full_pages;
+    if (pager->pages[page_num] != NULL) {
+      pager_flush(pager, page_num, num_additional_rows * ROW_SIZE);
+      free(pager->pages[page_num]);
+      pager->pages[page_num] = NULL;
+    }
+  }
+
+  int result = close(pager->file_descriptor);
+  if (result == -1) {
+    /* TODO: move this error message elsewhere. */
+    printf("Error closing db file.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
+    void* page = pager->pages[i];
+    if (page) {
+      free(page);
+      pager->pages[i] = NULL;
+    }
+  }
+  free(pager);
+  free(table);
 }
