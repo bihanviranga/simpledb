@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 const uint32_t ID_SIZE = size_of_attribute(Row, id);
 const uint32_t USERNAME_SIZE = size_of_attribute(Row, username);
@@ -66,16 +67,6 @@ Table* db_open(const char* filename) {
   table->num_rows = num_rows;
 
   return table;
-}
-
-/* 
- * Destroys a given Table and frees memory.
- */
-void free_table(Table* table) {
-  for (int i = 0; table->pages[i]; i++) {
-    free(table->pages[i]);
-  }
-  free(table);
 }
 
 /* 

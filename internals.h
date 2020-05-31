@@ -58,6 +58,10 @@ ExecuteResult execute_insert(Statement* statement, Table* table);
 ExecuteResult execute_select(Statement* statement, Table* table);
 
 Table* db_open(const char* filename);
-void free_table(Table* table);
+void db_close(Table* table);
+
+Pager* pager_open(const char* filename);
+void* get_page(Pager* pager, uint32_t page_num);
+void pager_flush(Pager* pager, uint32_t page_num, uint32_t size);
 
 #endif

@@ -3,6 +3,7 @@
  ********************************************************************************/
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "interface.h"
 #include "internals.h"
@@ -15,7 +16,14 @@
  * executes it. Otherwise it prepares the statement and executes it. 
  */
 int main(int argc, char* argv[]) {
-  Table* table = new_table();
+  if (argc < 2) {
+    printf("No database filename supplied. Quitting..\n");
+    exit(EXIT_FAILURE);
+  }
+
+  char* filename = argv[1];
+  Table* table = db_open(filename);
+
   InputBuffer* input_buffer = new_input_buffer();
 
   /* REPL */
@@ -25,7 +33,7 @@ int main(int argc, char* argv[]) {
 
     /* Meta-commands begin with a . (dot) character */
     if (input_buffer->buffer[0] == '.') {
-      switch (do_meta_command(input_buffer)) {
+      switch (do_meta_command(input_buffer, table)) {
         case (META_COMMAND_SUCCESS):
           continue;
         case (META_COMMAND_UNRECOGNIZED_COMMAND):
