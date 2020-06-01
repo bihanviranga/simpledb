@@ -23,7 +23,6 @@ typedef enum {
 
 /* 
  * The additional byte (+1) is given for the null byte at the end.
- * Without this, the test fails.
  */
 typedef struct {
   uint32_t id;
@@ -36,6 +35,7 @@ typedef struct {
   Row row_to_insert; /* Used only by the insert statement */
 } Statement;
 
+/* Pager manages the pages of the table */
 typedef struct {
   int file_descriptor;
   uint32_t file_length;
@@ -51,8 +51,6 @@ void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
 
 void* row_slot(Table* table, uint32_t row_num);
-
-void print_row(Row* row);
 
 ExecuteResult execute_insert(Statement* statement, Table* table);
 ExecuteResult execute_select(Statement* statement, Table* table);

@@ -12,8 +12,9 @@
 /* 
  * Entry point for the simpledb program.
  * 
- * Creates an in-memory table. Reads user input, and if the input is a meta-command
- * executes it. Otherwise it prepares the statement and executes it. 
+ * Opens the given database file, or creates if it doesn't exist.
+ * Reads user input, and if the input is a meta-command executes it. 
+ * Otherwise it prepares the statement and executes it. 
  */
 int main(int argc, char* argv[]) {
   if (argc < 2) {
@@ -23,7 +24,6 @@ int main(int argc, char* argv[]) {
 
   char* filename = argv[1];
   Table* table = db_open(filename);
-
   InputBuffer* input_buffer = new_input_buffer();
 
   /* REPL */

@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "interface.h"
+
 const uint32_t ID_SIZE = size_of_attribute(Row, id);
 const uint32_t USERNAME_SIZE = size_of_attribute(Row, username);
 const uint32_t EMAIL_SIZE = size_of_attribute(Row, email);
@@ -62,6 +64,7 @@ Table* db_open(const char* filename) {
   Pager* pager = pager_open(filename);
   uint32_t num_rows = pager->file_length / ROW_SIZE;
 
+  /* There is no new_table method anymore. So this is where new tables are created. */
   Table* table = malloc(sizeof(Table));
   table->pager = pager;
   table->num_rows = num_rows;
@@ -99,15 +102,9 @@ void deserialize_row(void* source, Row* destination) {
 }
 
 /* 
- * Prints a given row.
- */
-void print_row(Row* row) {
-  printf("%d %s %s\n", row->id, row->username, row->email);
-}
-
-/* 
  * Creates a pager and initializes its values.
  * All the pages in the pager are set to null.
+ * They are only loaded to memory when requested, to keep resource usage low.
  */
 Pager* pager_open(const char* filename) {
   int fd = open(
@@ -184,6 +181,11 @@ void* get_page(Pager* pager, uint32_t page_num) {
   return pager->pages[page_num];
 }
 
+/* 
+ * Closes the database connection.
+ * The pages in the memory are flushed and written to disk.
+ * Then the pager and table memories are freed.
+ */
 void db_close(Table* table) {
   Pager* pager = table->pager;
   uint32_t num_full_pages = table->num_rows / ROWS_PER_PAGE;

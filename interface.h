@@ -6,6 +6,8 @@
 
 #include <sys/types.h>
 
+#include "internals.h"
+
 /* 
  * The actual input length could be shorter than the allocated buffer length.
  * Hence we have two lengths: size of the buffer and size of the input.
@@ -22,5 +24,6 @@ void read_input(InputBuffer* input_buffer);
 void close_input_buffer(InputBuffer* input_buffer);
 
 void print_prompt();
+void print_row(Row* row);
 
 #endif

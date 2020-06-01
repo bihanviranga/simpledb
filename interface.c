@@ -46,3 +46,10 @@ void close_input_buffer(InputBuffer* input_buffer) {
  * Prompt for the database program.
  */
 void print_prompt() { printf("db > "); }
+
+/* 
+ * Prints a given row.
+ */
+void print_row(Row* row) {
+  printf("%d %s %s\n", row->id, row->username, row->email);
+}
