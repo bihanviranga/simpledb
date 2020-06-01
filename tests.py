@@ -1,18 +1,20 @@
 import unittest
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, run
 
 class TestDatabase(unittest.TestCase):
+    TESTING_DB_FILENAME = 'simpledbtesting.sdb'
+
     def setUp(self):
         pass
 
     def tearDown(self):
-        pass
+        run(['rm', self.TESTING_DB_FILENAME])
 
     def run_db(self, commands):
         commands = '\n'.join(commands)
         commands += '\n'
 
-        dbproc = Popen("./bin/simpledb", stdin=PIPE, stdout=PIPE, text=True)
+        dbproc = Popen(["./bin/simpledb", self.TESTING_DB_FILENAME], stdin=PIPE, stdout=PIPE, text=True)
         results = dbproc.communicate(commands)[0]
         return results.split("\n")
 
