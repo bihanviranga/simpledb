@@ -52,6 +52,8 @@ typedef struct {
  * We can use cursors to represent the beginning, end, and selected rows.
  * It has a table reference in it so we can simply pass the cursor ref to functions.
  * Member end_of_table says whether this cursor points beyond the table.
+ * 
+ * TODO: Do we need to track down existing cursors?
 */
 typedef struct {
   Table* table;
@@ -62,8 +64,6 @@ typedef struct {
 void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
 
-void* row_slot(Table* table, uint32_t row_num);
-
 ExecuteResult execute_insert(Statement* statement, Table* table);
 ExecuteResult execute_select(Statement* statement, Table* table);
 
@@ -73,5 +73,10 @@ void db_close(Table* table);
 Pager* pager_open(const char* filename);
 void* get_page(Pager* pager, uint32_t page_num);
 void pager_flush(Pager* pager, uint32_t page_num, uint32_t size);
+
+Cursor* table_start(Table* table);
+void* cursor_value(Cursor* cursor);
+Cursor* table_end(Table* table);
+void cursor_advance(Cursor* cursor);
 
 #endif
