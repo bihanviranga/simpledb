@@ -254,3 +254,25 @@ void pager_flush(Pager* pager, uint32_t page_num, uint32_t size) {
     exit(EXIT_FAILURE);
   }
 }
+
+/* 
+ * Creates a cursor pointing to the start of the table.
+ */
+Cursor* table_start(Table* table) {
+  Cursor* cursor = malloc(sizeof(Cursor));
+  cursor->table = table;
+  cursor->row_num = 0;
+  cursor->end_of_table = (table->num_rows == 0);
+
+  return cursor;
+}
+
+/* 
+ * Creates a cursor pointing to the end of the table.
+ */
+Cursor* table_end(Table* table) {
+  Cursor* cursor = malloc(sizeof(Cursor));
+  cursor->table = table;
+  cursor->row_num = table->num_rows;
+  cursor->end_of_table = true;
+}

@@ -4,6 +4,7 @@
 #ifndef _INTERNALS_H
 #define _INTERNALS_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "results.h"
@@ -46,6 +47,17 @@ typedef struct {
   uint32_t num_rows;
   Pager* pager;
 } Table;
+
+/* A Cursor represents a location in the table 
+ * We can use cursors to represent the beginning, end, and selected rows.
+ * It has a table reference in it so we can simply pass the cursor ref to functions.
+ * Member end_of_table says whether this cursor points beyond the table.
+*/
+typedef struct {
+  Table* table;
+  uint32_t row_num;
+  bool end_of_table;
+} Cursor;
 
 void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
