@@ -61,6 +61,12 @@ typedef struct {
   bool end_of_table;
 } Cursor;
 
+/* NodeType is for the tree implementation */
+typedef enum {
+  NODE_INTERNAL,
+  NODE_LEAF
+} NodeType;
+
 void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
 
