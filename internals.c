@@ -69,12 +69,17 @@ ExecuteResult execute_select(Statement* statement, Table* table) {
  */
 Table* db_open(const char* filename) {
   Pager* pager = pager_open(filename);
-  uint32_t num_rows = pager->file_length / ROW_SIZE;
 
   /* There is no new_table method anymore. So this is where new tables are created. */
   Table* table = malloc(sizeof(Table));
   table->pager = pager;
-  table->num_rows = num_rows;
+  table->root_page_num = 0;
+
+  if (pager->num_pages == 0) {
+    // New database file. Page 0 should be a leaf node.
+    void* root_node = get_page(pager, 0);
+    initialize_leaf_node(root_node);
+  }
 
   return table;
 }
@@ -352,22 +357,62 @@ const uint32_t LEAF_NODE_MAX_CELLS = LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_
 
 /* TODO : create a graphic illustrating the node memory structure */
 
+/*
+ * Returns a pointer to NUM_CELLS of NODE.
+ */
 uint32_t* leaf_node_num_cells(void* node) {
   return node + LEAF_NODE_NUM_CELLS_OFFSET;
 }
 
+/*
+ * Returns a pointer to the cell at CELL_NUM of NODE.
+ */
 void* leaf_node_cell(void* node, uint32_t cell_num) {
   return node + LEAF_NODE_HEADER_SIZE + cell_num * LEAF_NODE_CELL_SIZE;
 }
 
+/*
+ * Returns a pointer to the key of the cell at CELL_NUM of NODE.
+ */
 uint32_t* leaf_node_key(void* node, uint32_t cell_num) {
   return leaf_node_cell(node, cell_num);
 }
 
+/*
+ * Returns a pointer to the value of the cell at CELL_NUM of NODE.
+ */
 void* leaf_node_value(void* node, uint32_t cell_num) {
   return leaf_node_cell(node, cell_num) + LEAF_NODE_KEY_SIZE;
 }
 
+/*
+ * Initializes a leaf node by settings its NUM_CELLS to 0.
+ */
 void initialize_leaf_node(void* node) {
   *leaf_node_num_cells(node) = 0;
+}
+
+/*
+ * Inserts a KEY/VALUE pair to a node at position given by CURSOR.
+ */
+void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value) {
+  void* node = get_page(cursor->table->pager, cursor->page_num);
+
+  uint32_t num_cells = *leaf_node_num_cells(node);
+  if (num_cells >= LEAF_NODE_MAX_CELLS) {
+    /* Node is full. TODO: move this error message elsewhere */
+    printf("Leaf node splitting not implemented yet.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (cursor->cell_num < num_cells) {
+    /* Make space for new cell */
+    for (uint32_t i = num_cells; i > cursor->cell_num; i--) {
+      memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i - 1), LEAF_NODE_CELL_SIZE);
+    }
+  }
+
+  *(leaf_node_num_cells(node)) += 1;
+  *(leaf_node_key(node, cursor->cell_num)) = key;
+  serialize_row(value, leaf_node_value(node, cursor->cell_num));
 }
