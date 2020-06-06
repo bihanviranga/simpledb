@@ -14,7 +14,7 @@
 
 #include "interface.h"
 
-/* 
+/*
  * Row layout
  */
 const uint32_t ID_SIZE = size_of_attribute(Row, id);
@@ -27,19 +27,56 @@ const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
 
 const uint32_t PAGE_SIZE = 4096; /* Arbitrary value */
 
-/* 
+/*
+ * Common Node Header Layout
+ */
+const uint32_t NODE_TYPE_SIZE = sizeof(uint8_t);
+const uint32_t NODE_TYPE_OFFSET = 0;
+const uint32_t IS_ROOT_SIZE = sizeof(uint8_t);
+const uint32_t IS_ROOT_OFFSET = NODE_TYPE_SIZE;
+const uint32_t PARENT_POINTER_SIZE = sizeof(uint32_t);
+const uint32_t PARENT_POINTER_OFFSET = IS_ROOT_OFFSET + IS_ROOT_SIZE;
+const uint8_t COMMON_NODE_HEADER_SIZE =
+    NODE_TYPE_SIZE + IS_ROOT_SIZE + PARENT_POINTER_SIZE;
+
+/*
+ * Leaf Node Header Layout
+ */
+const uint32_t LEAF_NODE_NUM_CELLS_SIZE = sizeof(uint32_t);
+const uint32_t LEAF_NODE_NUM_CELLS_OFFSET = COMMON_NODE_HEADER_SIZE;
+const uint32_t LEAF_NODE_HEADER_SIZE =
+    COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE;
+
+/*
+ * Leaf Node Body Layout
+ *
+ * In the body of a leaf node, there will be an array of cells.
+ * A cell is a key followed by its value.
+ * (In this case, a serialized row)
+ */
+const uint32_t LEAF_NODE_KEY_SIZE = sizeof(uint32_t);
+const uint32_t LEAF_NODE_KEY_OFFSET = 0; /* Offset 0 of the BODY, not counting the HEADER */
+const uint32_t LEAF_NODE_VALUE_SIZE = ROW_SIZE;
+const uint32_t LEAF_NODE_VALUE_OFFSET = LEAF_NODE_KEY_OFFSET + LEAF_NODE_KEY_SIZE;
+const uint32_t LEAF_NODE_CELL_SIZE = LEAF_NODE_KEY_SIZE + LEAF_NODE_VALUE_SIZE;
+const uint32_t LEAF_NODE_SPACE_FOR_CELLS = PAGE_SIZE - LEAF_NODE_HEADER_SIZE;
+const uint32_t LEAF_NODE_MAX_CELLS = LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE;
+
+/* TODO : create a graphic illustrating the node memory structure */
+
+/*
  * Executes an insert statment, when the Statement and the Table is given.
  */
 ExecuteResult execute_insert(Statement* statement, Table* table) {
-  if (table->num_rows >= TABLE_MAX_ROWS) {
+  void* node = get_page(table->pager, table->root_page_num);
+  if (*(leaf_node_num_cells(node)) >= LEAF_NODE_MAX_CELLS) {
     return EXECUTE_TABLE_FULL;
   }
 
   Row* row_to_insert = &(statement->row_to_insert);
   Cursor* cursor = table_end(table);
 
-  serialize_row(row_to_insert, cursor_value(cursor));
-  table->num_rows += 1;
+  leaf_node_insert(cursor, row_to_insert->id, row_to_insert);
 
   free(cursor);
 
@@ -313,49 +350,12 @@ void cursor_advance(Cursor* cursor) {
 }
 
 /******************************************************************************** 
- * B+ tree implementation
+ * B+ tree implementation functions
  * 
  * I wanted to have the tree in a seperate file. But then I ran into an error when
  * accessing ROW_SIZE and PAGE_SIZE from another file.
  * TODO: Refactor the tree into another file. 
  ********************************************************************************/
-
-/* 
- * Common Node Header Layout
- */
-const uint32_t NODE_TYPE_SIZE = sizeof(uint8_t);
-const uint32_t NODE_TYPE_OFFSET = 0;
-const uint32_t IS_ROOT_SIZE = sizeof(uint8_t);
-const uint32_t IS_ROOT_OFFSET = NODE_TYPE_SIZE;
-const uint32_t PARENT_POINTER_SIZE = sizeof(uint32_t);
-const uint32_t PARENT_POINTER_OFFSET = IS_ROOT_OFFSET + IS_ROOT_SIZE;
-const uint8_t COMMON_NODE_HEADER_SIZE =
-    NODE_TYPE_SIZE + IS_ROOT_SIZE + PARENT_POINTER_SIZE;
-
-/* 
- * Leaf Node Header Layout 
- */
-const uint32_t LEAF_NODE_NUM_CELLS_SIZE = sizeof(uint32_t);
-const uint32_t LEAF_NODE_NUM_CELLS_OFFSET = COMMON_NODE_HEADER_SIZE;
-const uint32_t LEAF_NODE_HEADER_SIZE =
-    COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE;
-
-/* 
- * Leaf Node Body Layout
- * 
- * In the body of a leaf node, there will be an array of cells.
- * A cell is a key followed by its value.
- * (In this case, a serialized row)
- */
-const uint32_t LEAF_NODE_KEY_SIZE = sizeof(uint32_t);
-const uint32_t LEAF_NODE_KEY_OFFSET = 0; /* Offset 0 of the BODY, not counting the HEADER */
-const uint32_t LEAF_NODE_VALUE_SIZE = ROW_SIZE;
-const uint32_t LEAF_NODE_VALUE_OFFSET = LEAF_NODE_KEY_OFFSET + LEAF_NODE_KEY_SIZE;
-const uint32_t LEAF_NODE_CELL_SIZE = LEAF_NODE_KEY_SIZE + LEAF_NODE_VALUE_SIZE;
-const uint32_t LEAF_NODE_SPACE_FOR_CELLS = PAGE_SIZE - LEAF_NODE_HEADER_SIZE;
-const uint32_t LEAF_NODE_MAX_CELLS = LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE;
-
-/* TODO : create a graphic illustrating the node memory structure */
 
 /*
  * Returns a pointer to NUM_CELLS of NODE.
