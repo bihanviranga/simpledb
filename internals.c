@@ -1,4 +1,4 @@
-/******************************************************************************** 
+/********************************************************************************
  * internals.c : Internal implementation of data structures
  ********************************************************************************/
 #include "internals.h"
@@ -83,7 +83,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
   return EXECUTE_SUCCESS;
 }
 
-/* 
+/*
  * Executes a select statement, when the Statement and Table is given.
  */
 ExecuteResult execute_select(Statement* statement, Table* table) {
@@ -101,7 +101,7 @@ ExecuteResult execute_select(Statement* statement, Table* table) {
   return EXECUTE_SUCCESS;
 }
 
-/* 
+/*
  * Opens a database connection. Intializes a table struct and its pager.
  */
 Table* db_open(const char* filename) {
@@ -121,7 +121,7 @@ Table* db_open(const char* filename) {
   return table;
 }
 
-/* 
+/*
  * Calculates the memory location for a row, when a cursor is given.
  */
 void* cursor_value(Cursor* cursor) {
@@ -130,7 +130,7 @@ void* cursor_value(Cursor* cursor) {
   return leaf_node_value(page, cursor->cell_num);
 }
 
-/* 
+/*
  * Copies a given Row to memory.
  */
 void serialize_row(Row* source, void* destination) {
@@ -139,7 +139,7 @@ void serialize_row(Row* source, void* destination) {
   memcpy(destination + EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
 }
 
-/* 
+/*
  * Retrieves a Row from a given memory location.
  */
 void deserialize_row(void* source, Row* destination) {
@@ -148,7 +148,7 @@ void deserialize_row(void* source, Row* destination) {
   memcpy(&(destination->email), source + EMAIL_OFFSET, EMAIL_SIZE);
 }
 
-/* 
+/*
  * Creates a pager and initializes its values.
  * All the pages in the pager are set to null.
  * They are only loaded to memory when requested, to keep resource usage low.
@@ -163,7 +163,7 @@ Pager* pager_open(const char* filename) {
 
   );
 
-  /* 
+  /*
    * TODO: move this error message elsewhere.
    * Return an error from an enum and catch it in a switch like
    * other errors.
@@ -193,10 +193,10 @@ Pager* pager_open(const char* filename) {
   return pager;
 }
 
-/* 
+/*
  * Returns the page with the given page number from a pager.
  * If the page is not in the cache (in-memory), reads it from disk.
- * If the requested page number is not found in the file, it allocates a new 
+ * If the requested page number is not found in the file, it allocates a new
  * blank page. This blank page will not be persisted to the disk until flushed.(eg: using db_close())
  */
 void* get_page(Pager* pager, uint32_t page_num) {
@@ -211,7 +211,7 @@ void* get_page(Pager* pager, uint32_t page_num) {
     void* page = malloc(PAGE_SIZE);
     uint32_t num_pages = pager->file_length / PAGE_SIZE;
 
-    /* 
+    /*
      * There might be a partially filled page at the end of the file.
      * It should be counted as well.
      */
@@ -219,7 +219,7 @@ void* get_page(Pager* pager, uint32_t page_num) {
       num_pages += 1;
     }
 
-    /* 
+    /*
      * If the requested page has been used before, load it to memory.
      * Otherwise we can return the already allocated blank page.
      */
@@ -235,7 +235,7 @@ void* get_page(Pager* pager, uint32_t page_num) {
 
     pager->pages[page_num] = page;
 
-    /* 
+    /*
      * If the requested page is a new page, update the pagers total accordingly.
      */
     if (page_num >= pager->num_pages) {
@@ -246,7 +246,7 @@ void* get_page(Pager* pager, uint32_t page_num) {
   return pager->pages[page_num];
 }
 
-/* 
+/*
  * Closes the database connection.
  * The pages in the memory are flushed and written to disk.
  * Then the pager and table memories are freed.
@@ -305,7 +305,7 @@ void pager_flush(Pager* pager, uint32_t page_num) {
   }
 }
 
-/* 
+/*
  * Creates a cursor pointing to the start of the table.
  */
 Cursor* table_start(Table* table) {
@@ -321,7 +321,7 @@ Cursor* table_start(Table* table) {
   return cursor;
 }
 
-/* 
+/*
  * Creates a cursor pointing to the end of the table.
  */
 Cursor* table_end(Table* table) {
@@ -349,12 +349,24 @@ void cursor_advance(Cursor* cursor) {
   }
 }
 
-/******************************************************************************** 
+/*
+ * Prints important constants.
+ */
+void print_constants() {
+  printf("ROW_SIZE: %d\n", ROW_SIZE);
+  printf("COMMON_NODE_HEADER_SIZE: %d\n", COMMON_NODE_HEADER_SIZE);
+  printf("LEAF_NODE_HEADER_SIZE: %d\n", LEAF_NODE_HEADER_SIZE);
+  printf("LEAF_NODE_CELL_SIZE: %d\n", LEAF_NODE_CELL_SIZE);
+  printf("LEAF_NODE_SPACE_FOR_CELLS: %d\n", LEAF_NODE_SPACE_FOR_CELLS);
+  printf("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
+}
+
+/********************************************************************************
  * B+ tree implementation functions
- * 
+ *
  * I wanted to have the tree in a seperate file. But then I ran into an error when
  * accessing ROW_SIZE and PAGE_SIZE from another file.
- * TODO: Refactor the tree into another file. 
+ * TODO: Refactor the tree into another file.
  ********************************************************************************/
 
 /*
