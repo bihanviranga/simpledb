@@ -42,6 +42,20 @@ class TestDatabase(unittest.TestCase):
         results = self.run_db(commands2)
         self.assertIn('db > 1 user user@email.com', results)
 
+    def test_printsConstants(self):
+        commands = ['.constants', '.exit']
+        results = self.run_db(commands)
+        expectedResults = [
+            'ROW_SIZE: 293',
+            'COMMON_NODE_HEADER_SIZE: 6',
+            'LEAF_NODE_HEADER_SIZE: 10',
+            'LEAF_NODE_CELL_SIZE: 297',
+            'LEAF_NODE_SPACE_FOR_CELLS: 4086',
+            'LEAF_NODE_MAX_CELLS: 13'
+        ]
+        for eres in expectedResults:
+            self.assertIn(eres, results)
+
 class TestErrors(unittest.TestCase):
     TESTING_DB_FILENAME = 'simpledbtesting.sdb'
 
@@ -75,7 +89,7 @@ class TestErrors(unittest.TestCase):
         self.assertIn("db > Unrecognized keyword at start of 'not-a-statement'", results)
 
     def test_detectsWhenTableIsFull(self):
-        """ 
+        """
         Currently a page can hold 15 rows.
         A table has 100 pages. Therefore total rows in the table = 15*100 = 1500
         """
