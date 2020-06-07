@@ -1,4 +1,4 @@
-/******************************************************************************** 
+/********************************************************************************
  * processor.c : Processing of commands and statements
  ********************************************************************************/
 #include "processor.h"
@@ -9,7 +9,7 @@
 
 #include "results.h"
 
-/* 
+/*
  * Executes the meta command in a given InputBuffer.
  */
 MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
@@ -20,12 +20,16 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
     printf("SimpleDB constants:\n");
     print_constants();
     return META_COMMAND_SUCCESS;
+  } else if (strcmp(input_buffer->buffer, ".btree") == 0) {
+    printf("SimpleDB Tree:\n");
+    print_leaf_node(get_page(table->pager, 0));
+    return META_COMMAND_SUCCESS;
   } else {
     return META_COMMAND_UNRECOGNIZED_COMMAND;
   }
 }
 
-/* 
+/*
  * Detects the statement type and prepares a Statement for execution.
  */
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
@@ -41,7 +45,7 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
   return PREPARE_UNRECOGNIZED_STATEMENT;
 }
 
-/* 
+/*
  * Prepares an insert statement for execution.
  * Tokenizes the query parameters and does validation for size and range.
  * Populates the Statement->row_to_insert member.
@@ -75,7 +79,7 @@ PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
   return PREPARE_SUCCESS;
 }
 
-/* 
+/*
  * Calls the relevant execution function according to the Statement type.
  */
 ExecuteResult execute_statement(Statement* statement, Table* table) {

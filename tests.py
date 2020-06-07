@@ -56,6 +56,25 @@ class TestDatabase(unittest.TestCase):
         for eres in expectedResults:
             self.assertIn(eres, results)
 
+    def test_printsBtreeWithOneNode(self):
+        commands = [
+            "insert 3 user3 user3@website.com",
+            "insert 1 user1 user1@website.com",
+            "insert 2 user2 user2@website.com",
+            ".btree",
+            ".exit",
+        ]
+        results = self.run_db(commands)
+        expectedResults = [
+            "db > SimpleDB Tree:",
+            "Leaf node (size 3)",
+            "  - 0 : 3",
+            "  - 1 : 1",
+            "  - 2 : 2",
+        ]
+        for eres in expectedResults:
+            self.assertIn(eres, results)
+
 class TestErrors(unittest.TestCase):
     TESTING_DB_FILENAME = 'simpledbtesting.sdb'
 

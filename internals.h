@@ -1,5 +1,5 @@
-/******************************************************************************** 
- * internals.c : Internal implementation of data structures
+/********************************************************************************
+ * internals.h : Internal implementation of data structures
  ********************************************************************************/
 #ifndef _INTERNALS_H
 #define _INTERNALS_H
@@ -22,7 +22,7 @@ typedef enum {
   STATEMENT_SELECT
 } StatementType;
 
-/* 
+/*
  * The additional byte (+1) is given for the null byte at the end.
  */
 typedef struct {
@@ -49,11 +49,11 @@ typedef struct {
   Pager* pager;
 } Table;
 
-/* A Cursor represents a location in the table 
+/* A Cursor represents a location in the table
  * We can use cursors to represent the beginning, end, and selected rows.
  * It has a table reference in it so we can simply pass the cursor ref to functions.
  * Member end_of_table says whether this cursor points beyond the table.
- * 
+ *
  * TODO: Do we need to track down existing cursors?
 */
 typedef struct {
@@ -95,5 +95,6 @@ void initialize_leaf_node(void* node);
 void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value);
 
 void print_constants();
+void print_leaf_node(void* node);
 
 #endif
