@@ -18,6 +18,47 @@ class TestDatabase(unittest.TestCase):
         results = dbproc.communicate(commands)[0]
         return results.split("\n")
 
+    def test_insertsAndRetrievesARow(self):
+        commands = ['insert 1 user user@example.com', 'select', '.exit']
+        results = self.run_db(commands)
+        self.assertIn("db > 1 user user@example.com", results)
+
+    def test_allowsStringsThatAreMaximumLength(self):
+        """
+        Currently it is defined that username should be 32 bytes and email should be 255 bytes
+        """
+        long_username = "a"*32
+        long_email = "b"*255
+        long_insert = "insert 1 {} {}".format(long_username, long_email)
+        commands = [long_insert, "select", ".exit"]
+        results = self.run_db(commands)
+        self.assertIn("db > 1 {} {}".format(long_username, long_email), results)
+
+    def test_persistsDataWhenClosed(self):
+        commands1 = ['insert 1 user user@email.com', '.exit']
+        commands2 = ['select', '.exit']
+
+        self.run_db(commands1)
+        results = self.run_db(commands2)
+        self.assertIn('db > 1 user user@email.com', results)
+
+class TestErrors(unittest.TestCase):
+    TESTING_DB_FILENAME = 'simpledbtesting.sdb'
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        run(['rm', self.TESTING_DB_FILENAME])
+
+    def run_db(self, commands):
+        commands = '\n'.join(commands)
+        commands += '\n'
+
+        dbproc = Popen(["./bin/simpledb", self.TESTING_DB_FILENAME], stdin=PIPE, stdout=PIPE, text=True)
+        results = dbproc.communicate(commands)[0]
+        return results.split("\n")
+
     def test_detectsUnrecognizedMetaCommands(self):
         commands = ['.not-a-command', '.exit']
         results = self.run_db(commands)
@@ -32,11 +73,6 @@ class TestDatabase(unittest.TestCase):
         commands = ['not-a-statement', '.exit']
         results = self.run_db(commands)
         self.assertIn("db > Unrecognized keyword at start of 'not-a-statement'", results)
-    
-    def test_insertsAndRetrievesARow(self):
-        commands = ['insert 1 user user@example.com', 'select', '.exit']
-        results = self.run_db(commands)
-        self.assertIn("db > 1 user user@example.com", results)
 
     def test_detectsWhenTableIsFull(self):
         """ 
@@ -50,17 +86,6 @@ class TestDatabase(unittest.TestCase):
         results = self.run_db(commands)
         self.assertIn("db > Error: Table full.", results)
 
-    def test_allowsStringsThatAreMaximumLength(self):
-        """
-        Currently it is defined that username should be 32 bytes and email should be 255 bytes
-        """
-        long_username = "a"*32
-        long_email = "b"*255
-        long_insert = "insert 1 {} {}".format(long_username, long_email)
-        commands = [long_insert, "select", ".exit"]
-        results = self.run_db(commands)
-        self.assertIn("db > 1 {} {}".format(long_username, long_email), results)
-
     def test_detectsWhenStringsAreTooLong(self):
         long_username = "a"*33
         long_email = "b"*256
@@ -73,14 +98,6 @@ class TestDatabase(unittest.TestCase):
         commands = ['insert -1 user user@email.com', 'select', '.exit']
         results = self.run_db(commands)
         self.assertIn("db > ID cannot be negative.", results)
-
-    def test_persistsDataWhenClosed(self):
-        commands1 = ['insert 1 user user@email.com', '.exit']
-        commands2 = ['select', '.exit']
-
-        self.run_db(commands1)
-        results = self.run_db(commands2)
-        self.assertIn('db > 1 user user@email.com', results)
 
 if __name__ == "__main__":
     unittest.main()
