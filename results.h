@@ -1,4 +1,4 @@
-/******************************************************************************** 
+/********************************************************************************
  * results.h : Structures for results used throughout the program
  ********************************************************************************/
 #ifndef _RESULTS_H
@@ -19,7 +19,8 @@ typedef enum {
 
 typedef enum {
   EXECUTE_TABLE_FULL,
-  EXECUTE_SUCCESS
+  EXECUTE_SUCCESS,
+  EXECUTE_DUPLICATE_KEY
 } ExecuteResult;
 
 #endif
