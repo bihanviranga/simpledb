@@ -132,5 +132,10 @@ class TestErrors(unittest.TestCase):
         results = self.run_db(commands)
         self.assertIn("db > ID cannot be negative.", results)
 
+    def test_detectsDuplicateKeys(self):
+        commands = ['insert 1 user user@email.com', 'insert 1 anotheruser auser@email.com', '.exit']
+        results = self.run_db(commands)
+        self.assertIn("db > Error: Key already exits.", results)
+
 if __name__ == "__main__":
     unittest.main()
