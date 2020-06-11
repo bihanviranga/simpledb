@@ -1,4 +1,4 @@
-/******************************************************************************** 
+/********************************************************************************
  * main.c : Drives the execution of the simpledb program.
  ********************************************************************************/
 #include <stdbool.h>
@@ -9,12 +9,12 @@
 #include "internals.h"
 #include "processor.h"
 
-/* 
+/*
  * Entry point for the simpledb program.
- * 
+ *
  * Opens the given database file, or creates if it doesn't exist.
- * Reads user input, and if the input is a meta-command executes it. 
- * Otherwise it prepares the statement and executes it. 
+ * Reads user input, and if the input is a meta-command executes it.
+ * Otherwise it prepares the statement and executes it.
  */
 int main(int argc, char* argv[]) {
   if (argc < 2) {
@@ -66,6 +66,9 @@ int main(int argc, char* argv[]) {
         break;
       case (EXECUTE_TABLE_FULL):
         printf("Error: Table full.\n");
+        break;
+      case (EXECUTE_DUPLICATE_KEY):
+        printf("Error: Key already exits.\n");
         break;
     }
   }

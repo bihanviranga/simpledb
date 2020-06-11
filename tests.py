@@ -68,9 +68,9 @@ class TestDatabase(unittest.TestCase):
         expectedResults = [
             "db > SimpleDB Tree:",
             "Leaf node (size 3)",
-            "  - 0 : 3",
-            "  - 1 : 1",
-            "  - 2 : 2",
+            "  - 0 : 1",
+            "  - 1 : 2",
+            "  - 2 : 3",
         ]
         for eres in expectedResults:
             self.assertIn(eres, results)

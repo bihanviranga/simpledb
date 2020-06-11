@@ -409,9 +409,11 @@ void* leaf_node_value(void* node, uint32_t cell_num) {
 }
 
 /*
- * Initializes a leaf node by settings its NUM_CELLS to 0.
+ * Initializes a leaf node by setting its NUM_CELLS to 0,
+ * and node_type to NODE_LEAF.
  */
 void initialize_leaf_node(void* node) {
+  set_node_type(node, NODE_LEAF);
   *leaf_node_num_cells(node) = 0;
 }
 
