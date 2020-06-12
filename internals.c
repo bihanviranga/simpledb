@@ -602,8 +602,51 @@ void create_new_root(Table* table, uint32_t right_child_page_num) {
   initialize_internal_node(root);
   set_node_root(root, true);
   *internal_node_num_keys(root) = 1;
-  *internal_node_child(root, 0) = left_child_page_num;
+  *internal_node_child(root, 0) = left_child_page_number;
   uint32_t left_child_max_key = get_node_max_key(left_child);
   *internal_node_key(root, 0) = left_child_max_key;
   *internal_node_right_child(root) = right_child_page_num;
+}
+
+/*
+ * Returns a pointer to the NUM_KEYS of internal node NODE
+ */
+uint32_t* internal_node_num_keys(void* node) {
+  return node + INTERNAL_NODE_NUM_KEYS_OFFSET;
+}
+
+/*
+ * Returns a pointer to the RIGHT_CHILD page number of internal node NODE
+ */
+uint32_t* internal_node_right_child(void* node) {
+  return node + INTERNAL_NODE_RIGHT_CHILD_OFFSET;
+}
+
+/*
+ * Returns a pointer to the page number of child with CELL_NUM of NODE
+ */
+uint32_t* internal_node_cell(void* node, uint32_t cell_num) {
+  return node + INTERNAL_NODE_HEADER_SIZE + cell_num * INTERNAL_NODE_CELL_SIZE;
+}
+
+/*
+ * Returns a pointer to the page number of CHILD_NUM of NODE
+ */
+uint32_t* internal_node_child(void* node, uint32_t child_num) {
+  uint32_t num_keys = *internal_node_num_keys(node);
+  if (child_num > num_keys) {
+    printf("Child number %d is not available on node with %d keys\n", child_num, num_keys);
+    exit(EXIT_FAILURE);
+  } else if (child_num == num_keys) {
+    return internal_node_right_child(node);
+  } else {
+    return internal_node_cell(node, child_num);
+  }
+}
+
+/*
+ * Returns a pointer to the key of KEY_NUM of NODE
+ */
+uint32_t* internal_node_key(void* node, uint32_t key_num) {
+  return internal_node_cell(node, key_num) + INTERNAL_NODE_CHILD_SIZE;
 }
