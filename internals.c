@@ -148,6 +148,7 @@ Table* db_open(const char* filename) {
     // New database file. Page 0 should be a leaf node.
     void* root_node = get_page(pager, 0);
     initialize_leaf_node(root_node);
+    set_node_root(root_node, true);
   }
 
   return table;
@@ -445,6 +446,7 @@ void* leaf_node_value(void* node, uint32_t cell_num) {
  */
 void initialize_leaf_node(void* node) {
   set_node_type(node, NODE_LEAF);
+  set_node_root(node, false);
   *leaf_node_num_cells(node) = 0;
 }
 
@@ -649,4 +651,43 @@ uint32_t* internal_node_child(void* node, uint32_t child_num) {
  */
 uint32_t* internal_node_key(void* node, uint32_t key_num) {
   return internal_node_cell(node, key_num) + INTERNAL_NODE_CHILD_SIZE;
+}
+
+/*
+ * Returns the maximum key of NODE
+ */
+uint32_t get_node_max_key(void* node) {
+  switch (get_node_type(node)) {
+    case NODE_INTERNAL:
+      return *internal_node_key(node, *internal_node_num_keys(node) - 1);
+    case NODE_LEAF:
+      return *leaf_node_key(node, *leaf_node_num_cells(node) - 1);
+  }
+}
+
+/*
+ * Returns true if NODE is a root node, false otherwise.
+ *
+ * TODO : test this casting logic in an isolated setting.
+ */
+bool is_node_root(void* node) {
+  uint8_t value = *((uint8_t*)(node + IS_ROOT_OFFSET));
+  return (bool)value;
+}
+
+/*
+ * Sets the NODE's IS_ROOT true or false
+ */
+void set_node_root(void* node, bool is_root) {
+  uint8_t value = is_root;
+  *((uint8_t*)(node + IS_ROOT_OFFSET)) = value;
+}
+
+/*
+ * Intializes an internal node by setting its num_keys to 0 and is_root to false
+ */
+void initialize_internal_node(void* node) {
+  set_node_type(node, NODE_INTERNAL);
+  set_node_root(node, false);
+  *internal_node_num_keys(node) = 0;
 }
