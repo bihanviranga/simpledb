@@ -59,8 +59,11 @@ const uint32_t LEAF_NODE_KEY_OFFSET = 0; /* Offset 0 of the BODY, not counting t
 const uint32_t LEAF_NODE_VALUE_SIZE = ROW_SIZE;
 const uint32_t LEAF_NODE_VALUE_OFFSET = LEAF_NODE_KEY_OFFSET + LEAF_NODE_KEY_SIZE;
 const uint32_t LEAF_NODE_CELL_SIZE = LEAF_NODE_KEY_SIZE + LEAF_NODE_VALUE_SIZE;
+
 const uint32_t LEAF_NODE_SPACE_FOR_CELLS = PAGE_SIZE - LEAF_NODE_HEADER_SIZE;
 const uint32_t LEAF_NODE_MAX_CELLS = LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE;
+const uint32_t LEAF_NODE_RIGHT_SPLIT_COUNT = (LEAF_NODE_MAX_CELLS + 1) / 2;
+const uint32_t LEAF_NODE_LEFT_SPLIT_COUNT = (LEAF_NODE_MAX_CELLS + 1) - LEAF_NODE_RIGHT_SPLIT_COUNT;
 
 /* TODO : create a graphic illustrating the node memory structure */
 
@@ -70,9 +73,6 @@ const uint32_t LEAF_NODE_MAX_CELLS = LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_
 ExecuteResult execute_insert(Statement* statement, Table* table) {
   void* node = get_page(table->pager, table->root_page_num);
   uint32_t num_cells = (*leaf_node_num_cells(node));
-  if (num_cells >= LEAF_NODE_MAX_CELLS) {
-    return EXECUTE_TABLE_FULL;
-  }
 
   Row* row_to_insert = &(statement->row_to_insert);
   uint32_t key_to_insert = row_to_insert->id;
@@ -256,6 +256,14 @@ void* get_page(Pager* pager, uint32_t page_num) {
 }
 
 /*
+ * New pages will be added at the end of file.
+ * TODO: check for free pages and recycle.
+ */
+uint32_t get_unused_page_num(Pager* pager) {
+  return pager->num_pages;
+}
+
+/*
  * Closes the database connection.
  * The pages in the memory are flushed and written to disk.
  * Then the pager and table memories are freed.
@@ -426,9 +434,8 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value) {
 
   uint32_t num_cells = *leaf_node_num_cells(node);
   if (num_cells >= LEAF_NODE_MAX_CELLS) {
-    /* Node is full. TODO: move this error message elsewhere */
-    printf("Leaf node splitting not implemented yet.\n");
-    exit(EXIT_FAILURE);
+    leaf_node_split_and_insert(cursor, key, value);
+    return;
   }
 
   if (cursor->cell_num < num_cells) {
@@ -474,6 +481,54 @@ Cursor* leaf_node_find(Table* table, uint32_t page_num, uint32_t key) {
 
   cursor->cell_num = min_index;
   return cursor;
+}
+
+/*
+ * Creates a new node and moves half the cells to it.
+ * KEY/VALUE pair is inserted to one of the two nodes.
+ * Parent is updated or a new parent is created.
+ */
+void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
+  void* old_node = get_page(cursor->table->pager, cursor->page_num);
+  uint32_t new_page_num = get_unused_page_num(cursor->table->pager);
+  void* new_node = get_page(cursor->table->pager, new_page_num);
+  initialize_leaf_node(new_node);
+
+  /* Divide the keys between old (left) and new (right) nodes. */
+  for (uint32_t i = LEAF_NODE_MAX_CELLS; i >= 0; i--) {
+    void* destination_node;
+    if (i >= LEAF_NODE_LEFT_SPLIT_COUNT) {
+      destination_node = new_node;
+    } else {
+      destination_node = old_node;
+    }
+
+    uint32_t index_within_node = i % LEAF_NODE_LEFT_SPLIT_COUNT;
+    void* destination = leaf_node_cell(destination_node, index_within_node);
+
+    /*
+     * Copy the values to new locations.
+     */
+    if (i == cursor->cell_num) {
+      serialize_row(value, destination);
+    } else if (i > cursor->cell_num) {
+      memcpy(destination, leaf_node_cell(old_node, i - 1), LEAF_NODE_CELL_SIZE);
+    } else {
+      memcpy(destination, leaf_node_cell(old_node, i), LEAF_NODE_CELL_SIZE);
+    }
+
+    /* Update cell counts */
+    *(leaf_node_num_cells(old_node)) = LEAF_NODE_LEFT_SPLIT_COUNT;
+    *(leaf_node_num_cells(new_node)) = LEAF_NODE_RIGHT_SPLIT_COUNT;
+
+    /* Update the parent, or create one */
+    if (is_node_root(old_node)) {
+      return create_new_root(cursor->table, new_page_num);
+    } else {
+      printf("TODO: implement updating parent after splitting..\n");
+      exit(EXIT_FAILURE);
+    }
+  }
 }
 
 /*
