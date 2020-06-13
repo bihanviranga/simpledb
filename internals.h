@@ -54,8 +54,7 @@ typedef struct {
  * It has a table reference in it so we can simply pass the cursor ref to functions.
  * Member end_of_table says whether this cursor points beyond the table.
  *
- * TODO: Do we need to track down existing cursors?
-*/
+ */
 typedef struct {
   Table* table;
   uint32_t page_num;
@@ -69,23 +68,26 @@ typedef enum {
   NODE_LEAF
 } NodeType;
 
-void serialize_row(Row* source, void* destination);
-void deserialize_row(void* source, Row* destination);
-
 ExecuteResult execute_insert(Statement* statement, Table* table);
 ExecuteResult execute_select(Statement* statement, Table* table);
 
 Table* db_open(const char* filename);
 void db_close(Table* table);
 
+void serialize_row(Row* source, void* destination);
+void deserialize_row(void* source, Row* destination);
+
 Pager* pager_open(const char* filename);
 void* get_page(Pager* pager, uint32_t page_num);
+uint32_t get_unused_page_num(Pager* pager);
 void pager_flush(Pager* pager, uint32_t page_num);
 
 Cursor* table_start(Table* table);
-void* cursor_value(Cursor* cursor);
 Cursor* table_find(Table* table, uint32_t key);
+void* cursor_value(Cursor* cursor);
 void cursor_advance(Cursor* cursor);
+
+void print_constants();
 
 uint32_t* leaf_node_num_cells(void* node);
 void* leaf_node_cell(void* node, uint32_t cell_num);
@@ -95,6 +97,7 @@ void initialize_leaf_node(void* node);
 void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value);
 Cursor* leaf_node_find(Table* table, uint32_t page_num, uint32_t key);
 void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value);
+void print_leaf_node(void* node);
 
 uint32_t* internal_node_num_keys(void* node);
 uint32_t* internal_node_right_child(void* node);
@@ -103,14 +106,11 @@ uint32_t* internal_node_child(void* node, uint32_t child_num);
 uint32_t* internal_node_key(void* node, uint32_t key_num);
 void initialize_internal_node(void* node);
 
+uint32_t get_node_max_key(void* node);
+bool is_node_root(void* node);
+void set_node_root(void* node, bool is_root);
 NodeType get_node_type(void* node);
 void set_node_type(void* node, NodeType type);
-uint32_t get_node_max_key(void* node);
 void create_new_root(Table* table, uint32_t right_child_page_num);
-void set_node_root(void* node, bool is_root);
-bool is_node_root(void* node);
-
-void print_constants();
-void print_leaf_node(void* node);
 
 #endif

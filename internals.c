@@ -69,6 +69,7 @@ const uint32_t LEAF_NODE_LEFT_SPLIT_COUNT = (LEAF_NODE_MAX_CELLS + 1) - LEAF_NOD
  * Internal Node Header Layout
  *
  * We are tracking the rightmost child.
+ * The cells go like [child, key],[child, key],.. etc. So the last remaining child is tracked in the header.
  * Internal nodes have 1 more child pointer than the number of keys.
  */
 const uint32_t INTERNAL_NODE_NUM_KEYS_SIZE = sizeof(uint32_t);
@@ -155,12 +156,38 @@ Table* db_open(const char* filename) {
 }
 
 /*
- * Calculates the memory location for a row, when a cursor is given.
+ * Closes the database connection.
+ * The pages in the memory are flushed and written to disk.
+ * Then the pager and table memories are freed.
  */
-void* cursor_value(Cursor* cursor) {
-  uint32_t page_num = cursor->page_num;
-  void* page = get_page(cursor->table->pager, page_num);
-  return leaf_node_value(page, cursor->cell_num);
+void db_close(Table* table) {
+  Pager* pager = table->pager;
+
+  for (uint32_t i = 0; i < pager->num_pages; i++) {
+    if (pager->pages[i] == NULL) {
+      continue;
+    }
+    pager_flush(pager, i);
+    free(pager->pages[i]);
+    pager->pages[i] = NULL;
+  }
+
+  int result = close(pager->file_descriptor);
+  if (result == -1) {
+    /* TODO: move this error message elsewhere. */
+    printf("Error closing db file.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
+    void* page = pager->pages[i];
+    if (page) {
+      free(page);
+      pager->pages[i] = NULL;
+    }
+  }
+  free(pager);
+  free(table);
 }
 
 /*
@@ -288,40 +315,8 @@ uint32_t get_unused_page_num(Pager* pager) {
 }
 
 /*
- * Closes the database connection.
- * The pages in the memory are flushed and written to disk.
- * Then the pager and table memories are freed.
+ * Writes the PAGE_NUM of PAGER to file.
  */
-void db_close(Table* table) {
-  Pager* pager = table->pager;
-
-  for (uint32_t i = 0; i < pager->num_pages; i++) {
-    if (pager->pages[i] == NULL) {
-      continue;
-    }
-    pager_flush(pager, i);
-    free(pager->pages[i]);
-    pager->pages[i] = NULL;
-  }
-
-  int result = close(pager->file_descriptor);
-  if (result == -1) {
-    /* TODO: move this error message elsewhere. */
-    printf("Error closing db file.\n");
-    exit(EXIT_FAILURE);
-  }
-
-  for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
-    void* page = pager->pages[i];
-    if (page) {
-      free(page);
-      pager->pages[i] = NULL;
-    }
-  }
-  free(pager);
-  free(table);
-}
-
 void pager_flush(Pager* pager, uint32_t page_num) {
   if (pager->pages[page_num] == NULL) {
     /* TODO: move this error message elsewhere */
@@ -377,6 +372,15 @@ Cursor* table_find(Table* table, uint32_t key) {
     printf("Need to implement searching internal nodes.\n");
     exit(EXIT_FAILURE);
   }
+}
+
+/*
+ * Calculates the memory location for a row, when a cursor is given.
+ */
+void* cursor_value(Cursor* cursor) {
+  uint32_t page_num = cursor->page_num;
+  void* page = get_page(cursor->table->pager, page_num);
+  return leaf_node_value(page, cursor->cell_num);
 }
 
 /*
@@ -569,48 +573,6 @@ void print_leaf_node(void* node) {
 }
 
 /*
- * Get the NodeType of NODE.
- * Result is from the NodeType struct.
- */
-NodeType get_node_type(void* node) {
-  uint8_t value = *((uint8_t*)(node + NODE_TYPE_OFFSET));
-  return (NodeType)value;
-}
-
-/*
- * Set the type of NODE as NODETYPE.
- * NODETYPE must be from the NodeType struct.
- */
-void set_node_type(void* node, NodeType type) {
-  uint8_t value = type;
-  *((uint8_t*)(node + NODE_TYPE_OFFSET)) = value;
-}
-
-/*
- * Old root is copied to a new page, and becomes the left child.
- * New root points to the two leaf (child) nodes.
- */
-void create_new_root(Table* table, uint32_t right_child_page_num) {
-  void* root = get_page(table->pager, table->root_page_num);
-  void* right_child = get_page(table->pager, right_child_page_num);
-  uint32_t left_child_page_number = get_unused_page_num(table->pager);
-  void* left_child = get_page(table->pager, left_child_page_number);
-
-  /* Copy the old root to left child */
-  memcpy(left_child, root, PAGE_SIZE);
-  set_node_root(left_child, false);
-
-  /* Root node is now an internal node, with one key and two children */
-  initialize_internal_node(root);
-  set_node_root(root, true);
-  *internal_node_num_keys(root) = 1;
-  *internal_node_child(root, 0) = left_child_page_number;
-  uint32_t left_child_max_key = get_node_max_key(left_child);
-  *internal_node_key(root, 0) = left_child_max_key;
-  *internal_node_right_child(root) = right_child_page_num;
-}
-
-/*
  * Returns a pointer to the NUM_KEYS of internal node NODE
  */
 uint32_t* internal_node_num_keys(void* node) {
@@ -654,6 +616,15 @@ uint32_t* internal_node_key(void* node, uint32_t key_num) {
 }
 
 /*
+ * Intializes an internal node by setting its num_keys to 0 and is_root to false
+ */
+void initialize_internal_node(void* node) {
+  set_node_type(node, NODE_INTERNAL);
+  set_node_root(node, false);
+  *internal_node_num_keys(node) = 0;
+}
+
+/*
  * Returns the maximum key of NODE
  */
 uint32_t get_node_max_key(void* node) {
@@ -684,10 +655,43 @@ void set_node_root(void* node, bool is_root) {
 }
 
 /*
- * Intializes an internal node by setting its num_keys to 0 and is_root to false
+ * Get the NodeType of NODE.
+ * Result is from the NodeType struct.
  */
-void initialize_internal_node(void* node) {
-  set_node_type(node, NODE_INTERNAL);
-  set_node_root(node, false);
-  *internal_node_num_keys(node) = 0;
+NodeType get_node_type(void* node) {
+  uint8_t value = *((uint8_t*)(node + NODE_TYPE_OFFSET));
+  return (NodeType)value;
+}
+
+/*
+ * Set the type of NODE as NODETYPE.
+ * NODETYPE must be from the NodeType struct.
+ */
+void set_node_type(void* node, NodeType type) {
+  uint8_t value = type;
+  *((uint8_t*)(node + NODE_TYPE_OFFSET)) = value;
+}
+
+/*
+ * Old root is copied to a new page, and becomes the left child.
+ * New root points to the two leaf (child) nodes.
+ */
+void create_new_root(Table* table, uint32_t right_child_page_num) {
+  void* root = get_page(table->pager, table->root_page_num);
+  void* right_child = get_page(table->pager, right_child_page_num);
+  uint32_t left_child_page_number = get_unused_page_num(table->pager);
+  void* left_child = get_page(table->pager, left_child_page_number);
+
+  /* Copy the old root to left child */
+  memcpy(left_child, root, PAGE_SIZE);
+  set_node_root(left_child, false);
+
+  /* Root node is now an internal node, with one key and two children */
+  initialize_internal_node(root);
+  set_node_root(root, true);
+  *internal_node_num_keys(root) = 1;
+  *internal_node_child(root, 0) = left_child_page_number;
+  uint32_t left_child_max_key = get_node_max_key(left_child);
+  *internal_node_key(root, 0) = left_child_max_key;
+  *internal_node_right_child(root) = right_child_page_num;
 }
