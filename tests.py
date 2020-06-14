@@ -8,7 +8,7 @@ class TestDatabase(unittest.TestCase):
         pass
 
     def tearDown(self):
-        run(['rm', self.TESTING_DB_FILENAME])
+        run(['rm', "-f", self.TESTING_DB_FILENAME])
 
     def run_db(self, commands):
         commands = '\n'.join(commands)
@@ -67,10 +67,40 @@ class TestDatabase(unittest.TestCase):
         results = self.run_db(commands)
         expectedResults = [
             "db > SimpleDB Tree:",
-            "Leaf node (size 3)",
-            "  - 0 : 1",
-            "  - 1 : 2",
-            "  - 2 : 3",
+            "- leaf (size 3)",
+            "    -1",
+            "    -2",
+            "    -3",
+        ]
+        for eres in expectedResults:
+            self.assertIn(eres, results)
+
+    def test_printBtreeWithMultipleNodes(self):
+        commands = []
+        for i in range(1, 15):
+            commands.append("insert {0} user{0} user{0}@email.com".format(i))
+        commands.append(".btree")
+        results = self.run_db(commands)
+        expectedResults = [
+            "db > SimpleDB Tree:",
+            "- internal (size 1)",
+            "    - leaf (size 7)",
+            "        -1",
+            "        -2",
+            "        -3",
+            "        -4",
+            "        -5",
+            "        -6",
+            "        -7",
+            "    - key 7",
+            "    - leaf (size 7)",
+            "        -8",
+            "        -9",
+            "        -10",
+            "        -11",
+            "        -12",
+            "        -13",
+            "        -14",
         ]
         for eres in expectedResults:
             self.assertIn(eres, results)
@@ -82,7 +112,7 @@ class TestErrors(unittest.TestCase):
         pass
 
     def tearDown(self):
-        run(['rm', self.TESTING_DB_FILENAME])
+        run(['rm', "-f", self.TESTING_DB_FILENAME])
 
     def run_db(self, commands):
         commands = '\n'.join(commands)
