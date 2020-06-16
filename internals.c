@@ -522,7 +522,7 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
   uint32_t new_page_num = get_unused_page_num(cursor->table->pager);
   void* new_node = get_page(cursor->table->pager, new_page_num);
   initialize_leaf_node(new_node);
-  printf("[*] Split and insert running for key %d cursor cell num %d\n", key, cursor->cell_num);
+  // printf("[*] Split and insert running for key %d cursor cell num %d\n", key, cursor->cell_num);
 
   /* Divide the keys between old (left) and new (right) nodes. */
   for (uint32_t i = LEAF_NODE_MAX_CELLS; i > 0; i--) {
@@ -530,27 +530,27 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     void* destination_node;
     if (i >= LEAF_NODE_LEFT_SPLIT_COUNT) {
       destination_node = new_node;
-      printf("[*] Copying to new node. I = %d\n", i);
+    //  printf("[*] Copying to new node. I = %d\n", i);
     } else {
       destination_node = old_node;
-      printf("[*] Copying to old node. I = %d\n", i);
+    //  printf("[*] Copying to old node. I = %d\n", i);
     }
 
     uint32_t index_within_node = i % LEAF_NODE_LEFT_SPLIT_COUNT;
-    printf("\t[*] To index %d\n", index_within_node);
+    // printf("\t[*] To index %d\n", index_within_node);
     void* destination = leaf_node_cell(destination_node, index_within_node);
 
     /*
      * Copy the values to new locations.
      */
     if (i == cursor->cell_num) {
-      printf("\t[*] Target cell found. Serializing.\n");
+      // printf("\t[*] Target cell found. Serializing.\n");
       serialize_row(value, destination);
     } else if (i > cursor->cell_num) {
-      printf("\t[*] Copying key %d from old node to %d\n", *leaf_node_key(old_node, i - 1), index_within_node);
+      // printf("\t[*] Copying key %d from old node to %d\n", *leaf_node_key(old_node, i - 1), index_within_node);
       memcpy(destination, leaf_node_cell(old_node, i - 1), LEAF_NODE_CELL_SIZE);
     } else {
-      printf("\t[*] Copying key %d from old node to %d\n", *leaf_node_key(old_node, i), index_within_node);
+      // printf("\t[*] Copying key %d from old node to %d\n", *leaf_node_key(old_node, i), index_within_node);
       memcpy(destination, leaf_node_cell(old_node, i), LEAF_NODE_CELL_SIZE);
     }
   }
