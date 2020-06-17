@@ -369,8 +369,7 @@ Cursor* table_find(Table* table, uint32_t key) {
   if (get_node_type(root_node) == NODE_LEAF) {
     return leaf_node_find(table, root_page_num, key);
   } else {
-    printf("Need to implement searching internal nodes.\n");
-    exit(EXIT_FAILURE);
+    return internal_node_find(table, root_page_num, key);
   }
 }
 
@@ -530,10 +529,10 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     void* destination_node;
     if (i >= LEAF_NODE_LEFT_SPLIT_COUNT) {
       destination_node = new_node;
-    //  printf("[*] Copying to new node. I = %d\n", i);
+      //  printf("[*] Copying to new node. I = %d\n", i);
     } else {
       destination_node = old_node;
-    //  printf("[*] Copying to old node. I = %d\n", i);
+      //  printf("[*] Copying to old node. I = %d\n", i);
     }
 
     uint32_t index_within_node = i % LEAF_NODE_LEFT_SPLIT_COUNT;
@@ -618,6 +617,42 @@ void initialize_internal_node(void* node) {
   set_node_type(node, NODE_INTERNAL);
   set_node_root(node, false);
   *internal_node_num_keys(node) = 0;
+}
+
+/*
+ * Returns a cursor to the KEY's location in PAGE_NUM of TABLE. If KEY is
+ * not found, cursor points to where it should be.
+ */
+Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
+  void* node = get_page(table->pager, page_num);
+  uint32_t num_keys = *internal_node_num_keys(node);
+
+  /* Binary search to find index of child to search */
+  uint32_t min_index = 0;
+  uint32_t max_index = num_keys; /* Including the rightmost child */
+
+  /* Binary search ends when min_index = max_index = next child to search.
+   * If the next child is an internal node, this function is recursively called
+   * until it finds a leaf node, at which point leaf_node_find is called.
+   */
+  while (min_index != max_index) {
+    uint32_t index = (min_index + max_index) / 2;
+    uint32_t key_to_right = *internal_node_key(node, index);
+    if (key_to_right >= key) {
+      max_index = index;
+    } else {
+      min_index = index + 1;
+    }
+  }
+
+  uint32_t child_num = *internal_node_child(node, min_index);
+  void* child = get_page(table->pager, child_num);
+  switch (get_node_type(child)) {
+    case NODE_LEAF:
+      return leaf_node_find(table, child_num, key);
+    case NODE_INTERNAL:
+      return internal_node_find(table, child_num, key);
+  }
 }
 
 /*

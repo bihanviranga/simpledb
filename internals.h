@@ -104,6 +104,7 @@ uint32_t* internal_node_cell(void* node, uint32_t cell_num);
 uint32_t* internal_node_child(void* node, uint32_t child_num);
 uint32_t* internal_node_key(void* node, uint32_t key_num);
 void initialize_internal_node(void* node);
+Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key);
 
 uint32_t get_node_max_key(void* node);
 bool is_node_root(void* node);
