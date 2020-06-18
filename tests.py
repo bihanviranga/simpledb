@@ -105,6 +105,22 @@ class TestDatabase(unittest.TestCase):
         for eres in expectedResults:
             self.assertIn(eres, results)
 
+    def test_selectStatementForMultiLevelTrees(self):
+        commands = []
+        for i in range(1, 16):
+            commands.append("insert {0} user{0} user{0}@email.com".format(i))
+        commands.append("select")
+        commands.append(".exit")
+
+        expectedResults = ["db > 1 user1 user1@email.com",]
+        for i in range(2, 16):
+            expectedResults.append("{0} user{0} user{0}@email.com".format(i))
+
+        results = self.run_db(commands)
+
+        for eres in expectedResults:
+            self.assertIn(eres, results)
+
 class TestErrors(unittest.TestCase):
     TESTING_DB_FILENAME = 'simpledbtesting.sdb'
 
