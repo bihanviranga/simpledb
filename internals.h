@@ -97,6 +97,7 @@ void initialize_leaf_node(void* node);
 void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value);
 Cursor* leaf_node_find(Table* table, uint32_t page_num, uint32_t key);
 void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value);
+uint32_t* leaf_node_next_leaf(void* node);
 
 uint32_t* internal_node_num_keys(void* node);
 uint32_t* internal_node_right_child(void* node);
