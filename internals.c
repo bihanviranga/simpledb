@@ -706,7 +706,7 @@ void internal_node_insert(Table* table, uint32_t parent_page_num, uint32_t child
   *internal_node_num_keys(parent) = original_num_keys + 1;
 
   if (original_num_keys >= INTERNAL_NODE_MAX_CELLS) {
-    printf("Neew to implement splitting internal node\n");
+    printf("Need to implement splitting internal node\n");
     exit(EXIT_FAILURE);
   }
 

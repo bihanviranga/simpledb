@@ -163,7 +163,7 @@ class TestErrors(unittest.TestCase):
             commands.append("insert {0} user{0} user{0}@email.com".format(i))
         commands.append(".exit")
         results = self.run_db(commands)
-        self.assertIn("db > TODO: implement updating parent after splitting..", results)
+        self.assertIn("db > Need to implement splitting internal node", results)
 
     def test_detectsWhenStringsAreTooLong(self):
         long_username = "a"*33
